@@ -6,57 +6,70 @@ const port = process.env.PORT || 8000;
 const baseUrl = `http://localhost:${port}`;
 
 class TransactionChecker {
-    web3;
-    web3ws;
-    account;
-    subscription;
+  web3;
+  web3ws;
+  account;
+  subscription;
 
-    constructor(projectId, account) {
-        this.web3ws = new Web3(new Web3.providers.WebsocketProvider('wss://ropsten.infura.io/ws/v3/' + projectId));
-        this.web3 = new Web3(new Web3.providers.HttpProvider('https://ropsten.infura.io/v3/' + projectId));
-        this.account = account.toLowerCase();
-    }
+  constructor(projectId, account) {
+    this.web3ws = new Web3(
+      new Web3.providers.WebsocketProvider(
+        'wss://ropsten.infura.io/ws/v3/' + projectId
+      )
+    );
+    this.web3 = new Web3(
+      new Web3.providers.HttpProvider(
+        'https://ropsten.infura.io/v3/' + projectId
+      )
+    );
+    this.account = account.toLowerCase();
+  }
 
-    subscribe(topic) {
-        this.subscription = this.web3ws.eth.subscribe(topic, (err, res) => {
-            if (err) console.error(err);
-        });
-    }
+  subscribe(topic) {
+    this.subscription = this.web3ws.eth.subscribe(topic, (err, res) => {
+      if (err) console.error(err);
+    });
+  }
 
-    watchTransactions() {
+  watchTransactions() {
+    this.subscription.on('data', txHash => {
+      function getStatusOfTransaction(tx, txReceipt) {
+        if (tx.gas > txReceipt.gasUsed) {
+          return 'Transaction Mined Successfully, Transaction Status Good';
+        } else if (tx.gas == txReceipt.gasUsed) {
+          return 'Transaction Mined Successfully, But Contract Execution Failed';
+        } else {
+          return 'Regular Transaction That Fails, Does Not Get Mined Into The Blockchain(Insufficient funds for gas * price + value)';
+        }
+      }
 
-        this.subscription.on('data', (txHash) => {
-            function getStatusOfTransaction(tx, txReceipt) {
-                if(tx.gas > txReceipt.gasUsed) {
-                    return "Transaction Mined Successfully, Transaction Status Good";
-                }else if(tx.gas == txReceipt.gasUsed) {
-                    return "Transaction Mined Successfully, But Contract Execution Failed";
-                }else{
-                    return "Regular Transaction That Fails, Does Not Get Mined Into The Blockchain(Insufficient funds for gas * price + value)"
-                }
-            }
-
-            setTimeout(async () => {
-                try {
-                    let tx = await this.web3.eth.getTransaction(txHash);
-                    if (this.account == tx.from.toLowerCase()) {
-                        let txReceipt = await this.web3.eth.getTransactionReceipt(txHash);
-                        return(getStatusOfTransaction(tx, txReceipt));
-                    }
-                } catch (err) {
-                    console.error(err);
-                }
-            }, 100000000)
-        });
-    }
+      setTimeout(async () => {
+        try {
+          let tx = await this.web3.eth.getTransaction(txHash);
+          if (this.account == tx.from.toLowerCase()) {
+            let txReceipt = await this.web3.eth.getTransactionReceipt(txHash);
+            return getStatusOfTransaction(tx, txReceipt);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }, 100000000);
+    });
+  }
 }
 
 app.get('/status', (req, res) => {
+  let txChecker = new TransactionChecker(
+    '5b2813860d8245788ef890e4a0549c6d',
+    '0x478804be62A9e28ba67eF0186F82fA3b75b1a2a3'
+  );
+  txChecker.subscribe('pendingTransactions');
+  let status = txChecker.watchTransactions();
+  res.status(200).send(status);
+});
 
-    let txChecker = new TransactionChecker('5b2813860d8245788ef890e4a0549c6d', '0x478804be62A9e28ba67eF0186F82fA3b75b1a2a3');
-    txChecker.subscribe('pendingTransactions');
-    let status = txChecker.watchTransactions();
-    res.status(200).send(status);
+app.get('/', (req, res) => {
+  res.status(200).send('Hellostatus');
 });
 
 // Server
