@@ -19,7 +19,6 @@ class TransactionChecker {
     }
 
     watchTransactions() {
-        console.log('Watching all pending transactions...');
         this.subscription.on('data', (txHash) => {
 
             function getStatusOfTransaction(tx, txReceipt) {
@@ -35,19 +34,16 @@ class TransactionChecker {
             setTimeout(async () => {
                 try {
                     let tx = await this.web3.eth.getTransaction(txHash);
-                    if(tx!=null) {
                         if (this.account == tx.from.toLowerCase()) {
-                            console.log(tx);
                             let txReceipt = await this.web3.eth.getTransactionReceipt(txHash);
-                            console.log(txReceipt);
-                            console.log(getStatusOfTransaction(tx, txReceipt));
+                           return(getStatusOfTransaction(tx, txReceipt));
                         }
-                    }
+
 
                 } catch (err) {
                     console.error(err);
                 }
-            }, 100000)
+            }, 100000000)
         });
     }
 }
