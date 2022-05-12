@@ -1,8 +1,28 @@
 {
   "name": "hackathon2",
   "version": "1.0.0",
-  "dependencies": {},
+  "dependencies": {
+    "aws-serverless-express": "^3.4.0",
+    "express": "^4.18.1"
+  },
   "devDependencies": {
+    "nodemon": "^2.0.16",
+    "serverless": "^3.17.0",
     "web3": "^1.7.3"
+  },
+  "main": "transactionChecker.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MounikaYalamarty/hackathon-rock.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MounikaYalamarty/hackathon-rock/issues"
+  },
+  "homepage": "https://github.com/MounikaYalamarty/hackathon-rock#readme",
+  "description": "",
+  "scripts": {
+    "start": "nodemon node_modules/local.js"
   }
 }
