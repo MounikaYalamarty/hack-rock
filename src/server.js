@@ -31,29 +31,36 @@ class TransactionChecker {
     });
   }
 
+  getStatusOfTransaction(tx, txReceipt) {
+    if (tx.gas > txReceipt.gasUsed) {
+      return 'Transaction Mined Successfully, Transaction Status Good';
+    } else if (tx.gas == txReceipt.gasUsed) {
+      return 'Transaction Mined Successfully, But Contract Execution Failed';
+    } else {
+      return 'Regular Transaction That Fails, Does Not Get Mined Into The Blockchain(Insufficient funds for gas * price + value)';
+    }
+  }
   watchTransactions() {
+    console.log("waiting for the transaction");
     this.subscription.on('data', txHash => {
-      function getStatusOfTransaction(tx, txReceipt) {
-        if (tx.gas > txReceipt.gasUsed) {
-          return 'Transaction Mined Successfully, Transaction Status Good';
-        } else if (tx.gas == txReceipt.gasUsed) {
-          return 'Transaction Mined Successfully, But Contract Execution Failed';
-        } else {
-          return 'Regular Transaction That Fails, Does Not Get Mined Into The Blockchain(Insufficient funds for gas * price + value)';
-        }
-      }
-
+     // console.log(txHash)
       setTimeout(async () => {
         try {
+          //console.log(txHash)
           let tx = await this.web3.eth.getTransaction(txHash);
+         // console.log(tx);
+        //  console.log(this.account);
           if (this.account == tx.from.toLowerCase()) {
+           // console.log(tx);
             let txReceipt = await this.web3.eth.getTransactionReceipt(txHash);
-            return getStatusOfTransaction(tx, txReceipt);
+            console.log(txReceipt);
+            console.log(this.getStatusOfTransaction(tx, txReceipt))
+            return this.getStatusOfTransaction(tx, txReceipt);
           }
         } catch (err) {
           console.error(err);
         }
-      }, 100000000);
+      }, 80000);
     });
   }
 }
@@ -63,8 +70,9 @@ app.get('/status', (req, res) => {
     '5b2813860d8245788ef890e4a0549c6d',
     '0x478804be62A9e28ba67eF0186F82fA3b75b1a2a3'
   );
+
   txChecker.subscribe('pendingTransactions');
-  let status = txChecker.watchTransactions();
+  let status =  txChecker.watchTransactions();
   res.status(200).send(status);
 });
 
@@ -73,4 +81,6 @@ app.get('/', (req, res) => {
 });
 
 // Server
-module.exports = app;
+app.listen(port, () => {
+  console.log(`Listening on: http://localhost:${port}`);
+});
